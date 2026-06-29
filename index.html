@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/stefa/Dropbox/PC/Downloads/index_32.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stefan's Daily To-Do</title>
 <style>
@@ -48,7 +48,6 @@
   .sync-status.syncing .sync-dot { background: #facc15; animation: blink 0.8s infinite; }
   .sync-status.error .sync-dot { background: #f87171; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
   .voice-section { padding: 18px 24px 0; }
   .mic-big {
     width: 100%; padding: 16px;
@@ -73,7 +72,6 @@
   .mic-icon { font-size: 22px; }
   .mic-label { flex: 1; text-align: left; }
   .mic-hint-text { font-size: 11px; opacity: 0.6; }
-
   .transcript-box {
     margin: 10px 24px 0;
     min-height: 0; max-height: 0; overflow: hidden;
@@ -85,7 +83,6 @@
   .transcript-box.visible { max-height: 80px; padding: 10px 14px; }
   .transcript-box .interim { color: rgba(255,255,255,0.4); }
   .transcript-box .final { color: #e8e8f0; font-style: normal; font-weight: 500; }
-
   .input-row {
     display: flex; gap: 10px; align-items: center;
     padding: 14px 24px;
@@ -107,7 +104,6 @@
     background: #1350CC; color: white; transition: all 0.2s; flex-shrink: 0;
   }
   .add-btn:hover { background: #0e3fa8; }
-
   .filters { display: flex; gap: 8px; padding: 12px 24px 8px; flex-wrap: wrap; }
   .filter-btn {
     background: transparent;
@@ -118,11 +114,9 @@
     cursor: pointer; transition: all 0.2s;
   }
   .filter-btn.active { background: #1350CC; border-color: #1350CC; color: white; }
-
   .task-list { padding: 6px 24px 20px; max-height: 420px; overflow-y: auto; }
   .task-list::-webkit-scrollbar { width: 3px; }
   .task-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
   .task-item {
     display: flex; align-items: center; gap: 11px;
     padding: 12px 13px; border-radius: 10px; margin-bottom: 5px;
@@ -182,34 +176,24 @@
     cursor: pointer; transition: all 0.2s;
   }
   .clear-btn:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
-  .no-speech {
-    margin: 14px 24px 0;
-    padding: 10px 14px;
-    background: rgba(255,200,0,0.08);
-    border: 1px solid rgba(255,200,0,0.2);
-    border-radius: 10px;
-    font-size: 12px;
-    color: rgba(255,200,0,0.7);
-  }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <h1>Stefan's Daily To-Do</h1>
-    <div class="date-label" id="dateLabel">Monday, 29 June 2026</div>
+    <div class="date-label" id="dateLabel"></div>
     <div class="stats">
       <div class="stat"><span id="cTotal">0</span> tasks</div>
       <div class="stat"><span id="cDone">0</span> done</div>
       <div class="stat"><span id="cLeft">0</span> remaining</div>
     </div>
-    <div class="sync-status synced" id="syncStatus">
+    <div class="sync-status syncing" id="syncStatus">
       <div class="sync-dot"></div>
-      <span id="syncText">✓ Synced with Google Sheets</span>
+      <span id="syncText">Connecting to cloud…</span>
     </div>
   </div>
-
-  <div class="voice-section" id="voiceSection" style="display: block;">
+  <div class="voice-section" id="voiceSection" style="display:none">
     <button class="mic-big" id="micBig">
       <span class="mic-icon">🎤</span>
       <span class="mic-label">
@@ -219,217 +203,94 @@
     </button>
   </div>
   <div class="transcript-box" id="transcriptBox"></div>
-  <div class="no-speech" id="noSpeechMsg" style="display:none">
-    Voice input requires Chrome browser for best results.
-  </div>
-
   <div class="input-row">
-    <input id="taskInput" class="task-input" type="text" placeholder="Or type a task and press Enter">
+    <input id="taskInput" class="task-input" type="text" placeholder="Or type a task and press Enter" />
     <button class="add-btn" id="addBtn">+</button>
   </div>
-
   <div class="filters">
     <button class="filter-btn active" data-f="all">All</button>
     <button class="filter-btn" data-f="pending">Remaining</button>
     <button class="filter-btn" data-f="done">Done</button>
     <button class="filter-btn" data-f="carried">Carried Over</button>
   </div>
-
-  <div class="task-list" id="taskList"><div class="empty"><div>📋</div>No tasks here</div></div>
-
+  <div class="task-list" id="taskList"></div>
   <div class="footer">
     <button class="clear-btn" id="clearDone">Clear completed</button>
     <span style="font-size:11px;color:rgba(255,255,255,0.2)">☁️ Google Sheets sync</span>
   </div>
 </div>
-
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmL50nHVVCNx_ktBW1JPN_6PDcLpzVnjydfhM-f3LAS1_AvKEp4hCAsh7a9SoLocm1/exec';
   const LOCAL_KEY  = 'stefan_todo_backup';
-
-  let tasks  = [];
-  let filter = 'all';
-  let saveTimer = null;
-
+  let tasks = [], filter = 'all', saveTimer = null;
   document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-ZA', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-
   function setSync(state, msg) {
-    const el = document.getElementById('syncStatus');
-    el.className = 'sync-status ' + state;
+    document.getElementById('syncStatus').className = 'sync-status ' + state;
     document.getElementById('syncText').textContent = msg;
   }
-
-  // ── Cloud load ───────────────────────────────────────────────
   async function cloudLoad() {
     setSync('syncing', 'Loading from cloud…');
     try {
       const res = await fetch(SCRIPT_URL + '?action=load');
-      const text = await res.text();
-      const data = JSON.parse(text);
+      const data = JSON.parse(await res.text());
       tasks = Array.isArray(data) ? data : [];
       localStorage.setItem(LOCAL_KEY, JSON.stringify(tasks));
       setSync('synced', '✓ Synced with Google Sheets');
     } catch(e) {
       setSync('error', 'Cloud unavailable — using local backup');
-      try {
-        const raw = localStorage.getItem(LOCAL_KEY);
-        tasks = raw ? JSON.parse(raw) : [];
-      } catch { tasks = []; }
+      try { tasks = JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch { tasks = []; }
     }
     render();
   }
-
-  // ── Cloud save (debounced) ───────────────────────────────────
   function cloudSave() {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(tasks));
     clearTimeout(saveTimer);
     setSync('syncing', 'Saving…');
     saveTimer = setTimeout(async () => {
       try {
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: new URLSearchParams({ action: 'save', tasks: JSON.stringify(tasks) })
-        });
+        await fetch(SCRIPT_URL, { method: 'POST', body: new URLSearchParams({ action: 'save', tasks: JSON.stringify(tasks) }) });
         setSync('synced', '✓ Saved to Google Sheets');
-      } catch(e) {
-        setSync('error', 'Saved locally (cloud unavailable)');
-      }
+      } catch(e) { setSync('error', 'Saved locally (cloud unavailable)'); }
     }, 800);
   }
-
-  // ── Render ───────────────────────────────────────────────────
-  function shortDate(iso) {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
-  }
-
+  function shortDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) : ''; }
   function render() {
-    const list = document.getElementById('taskList');
     let view = tasks;
     if (filter === 'pending') view = tasks.filter(t => !t.done);
     if (filter === 'done')    view = tasks.filter(t => t.done);
     if (filter === 'carried') view = tasks.filter(t => t.carried);
-
     const done = tasks.filter(t => t.done).length;
     document.getElementById('cTotal').textContent = tasks.length;
     document.getElementById('cDone').textContent  = done;
     document.getElementById('cLeft').textContent  = tasks.length - done;
-
-    if (view.length === 0) {
-      list.innerHTML = `<div class="empty"><div>${filter === 'done' ? '🎉' : '📋'}</div>${filter === 'done' ? 'Nothing completed yet' : 'No tasks here'}</div>`;
-      return;
-    }
-
-    list.innerHTML = view.map(t => {
-      const i = tasks.indexOf(t);
-      return `<div class="task-item ${t.done ? 'done' : ''}">
-        <div class="check-circle ${t.done ? 'checked' : ''}" onclick="toggle(${i})"></div>
-        <div class="task-text">${t.text}${t.carried ? '<span class="carried-tag">carried</span>' : ''}</div>
-        <span class="task-meta">${shortDate(t.date)}</span>
-        <button class="carry-btn ${t.carried ? 'on' : ''}" onclick="carry(${i})">${t.carried ? '↩ undo' : '→ tmrw'}</button>
-        <button class="del-btn" onclick="del(${i})">✕</button>
-      </div>`;
-    }).join('');
+    const list = document.getElementById('taskList');
+    if (!view.length) { list.innerHTML = `<div class="empty"><div>${filter==='done'?'🎉':'📋'}</div>${filter==='done'?'Nothing completed yet':'No tasks here'}</div>`; return; }
+    list.innerHTML = view.map(t => { const i = tasks.indexOf(t); return `<div class="task-item ${t.done?'done':''}"><div class="check-circle ${t.done?'checked':''}" onclick="toggle(${i})"></div><div class="task-text">${t.text}${t.carried?'<span class="carried-tag">carried</span>':''}</div><span class="task-meta">${shortDate(t.date)}</span><button class="carry-btn ${t.carried?'on':''}" onclick="carry(${i})">${t.carried?'↩ undo':'→ tmrw'}</button><button class="del-btn" onclick="del(${i})">✕</button></div>`; }).join('');
   }
-
-  function addTask(text) {
-    if (!text.trim()) return;
-    tasks.unshift({ text: text.trim(), done: false, carried: false, date: new Date().toISOString() });
-    cloudSave(); render();
-  }
+  function addTask(text) { if (!text.trim()) return; tasks.unshift({ text: text.trim(), done: false, carried: false, date: new Date().toISOString() }); cloudSave(); render(); }
   function toggle(i) { tasks[i].done = !tasks[i].done; cloudSave(); render(); }
   function carry(i)  { tasks[i].carried = !tasks[i].carried; cloudSave(); render(); }
   function del(i)    { tasks.splice(i, 1); cloudSave(); render(); }
-
-  document.getElementById('addBtn').onclick = () => {
-    const inp = document.getElementById('taskInput');
-    addTask(inp.value); inp.value = '';
-  };
-  document.getElementById('taskInput').onkeydown = e => {
-    if (e.key === 'Enter') { addTask(e.target.value); e.target.value = ''; }
-  };
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.onclick = () => {
-      document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active'); filter = b.dataset.f; render();
-    };
-  });
-  document.getElementById('clearDone').onclick = () => {
-    tasks = tasks.filter(t => !t.done); cloudSave(); render();
-  };
-
-  // ── Voice ────────────────────────────────────────────────────
+  document.getElementById('addBtn').onclick = () => { const inp = document.getElementById('taskInput'); addTask(inp.value); inp.value = ''; };
+  document.getElementById('taskInput').onkeydown = e => { if (e.key === 'Enter') { addTask(e.target.value); e.target.value = ''; } };
+  document.querySelectorAll('.filter-btn').forEach(b => { b.onclick = () => { document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); filter = b.dataset.f; render(); }; });
+  document.getElementById('clearDone').onclick = () => { tasks = tasks.filter(t => !t.done); cloudSave(); render(); };
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    document.getElementById('noSpeechMsg').style.display = 'block';
-  } else {
+  if (SR) {
     document.getElementById('voiceSection').style.display = 'block';
-    const rec = new SR();
-    rec.lang = 'en-ZA'; rec.continuous = true; rec.interimResults = true;
-
+    const rec = new SR(); rec.lang = 'en-ZA'; rec.continuous = true; rec.interimResults = true;
     let isRecording = false, silenceTimer = null, finalText = '';
-    const micBig = document.getElementById('micBig');
-    const micLabelText = document.getElementById('micLabelText');
-    const micHintEl = document.querySelector('.mic-hint-text');
-    const transcriptBox = document.getElementById('transcriptBox');
-
-    function startRecording() {
-      finalText = '';
-      transcriptBox.innerHTML = '<span class="interim">Listening… speak now</span>';
-      transcriptBox.classList.add('visible');
-      isRecording = true;
-      micBig.classList.add('recording');
-      micLabelText.textContent = 'Listening…';
-      micHintEl.textContent = 'Tap again to cancel';
-      try { rec.start(); } catch(e) {}
-    }
-
-    function stopRecording(addIt) {
-      isRecording = false; clearTimeout(silenceTimer);
-      try { rec.stop(); } catch(e) {}
-      micBig.classList.remove('recording');
-      micLabelText.textContent = 'Tap to speak a task';
-      micHintEl.textContent = 'Adds automatically when you stop speaking';
-      if (addIt && finalText.trim()) {
-        addTask(finalText.trim());
-        transcriptBox.innerHTML = `<span class="final">✓ Added: "${finalText.trim()}"</span>`;
-        setTimeout(() => transcriptBox.classList.remove('visible'), 2000);
-      } else { transcriptBox.classList.remove('visible'); }
-      finalText = '';
-    }
-
-    rec.onresult = (e) => {
-      let interim = '', final = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) final += t + ' '; else interim += t;
-      }
-      if (final) finalText += final;
-      const display = (finalText + interim).trim();
-      transcriptBox.innerHTML = display
-        ? `<span class="final">${finalText.trim()}</span> <span class="interim">${interim}</span>`
-        : '<span class="interim">Listening… speak now</span>';
-      clearTimeout(silenceTimer);
-      if (finalText.trim()) silenceTimer = setTimeout(() => stopRecording(true), 2000);
-    };
-
-    rec.onerror = (e) => {
-      if (e.error === 'no-speech') { if (isRecording) { try { rec.stop(); rec.start(); } catch(err) {} } return; }
-      if (e.error === 'not-allowed') {
-        transcriptBox.innerHTML = '<span style="color:#F1573C">Mic access denied. Allow it in browser settings.</span>';
-        transcriptBox.classList.add('visible'); stopRecording(false); return;
-      }
-      stopRecording(false);
-    };
+    const micBig = document.getElementById('micBig'), micLabelText = document.getElementById('micLabelText'), micHintEl = document.querySelector('.mic-hint-text'), transcriptBox = document.getElementById('transcriptBox');
+    function startRecording() { finalText = ''; transcriptBox.innerHTML = '<span class="interim">Listening… speak now</span>'; transcriptBox.classList.add('visible'); isRecording = true; micBig.classList.add('recording'); micLabelText.textContent = 'Listening…'; micHintEl.textContent = 'Tap again to cancel'; try { rec.start(); } catch(e) {} }
+    function stopRecording(addIt) { isRecording = false; clearTimeout(silenceTimer); try { rec.stop(); } catch(e) {} micBig.classList.remove('recording'); micLabelText.textContent = 'Tap to speak a task'; micHintEl.textContent = 'Adds automatically when you stop speaking'; if (addIt && finalText.trim()) { addTask(finalText.trim()); transcriptBox.innerHTML = `<span class="final">✓ Added: "${finalText.trim()}"</span>`; setTimeout(() => transcriptBox.classList.remove('visible'), 2000); } else { transcriptBox.classList.remove('visible'); } finalText = ''; }
+    rec.onresult = (e) => { let interim = '', final = ''; for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) final += t + ' '; else interim += t; } if (final) finalText += final; transcriptBox.innerHTML = (finalText+interim).trim() ? `<span class="final">${finalText.trim()}</span> <span class="interim">${interim}</span>` : '<span class="interim">Listening… speak now</span>'; clearTimeout(silenceTimer); if (finalText.trim()) silenceTimer = setTimeout(() => stopRecording(true), 2000); };
+    rec.onerror = (e) => { if (e.error==='no-speech') { if (isRecording) { try { rec.stop(); rec.start(); } catch(err) {} } return; } stopRecording(false); };
     rec.onend = () => { if (isRecording && !finalText.trim()) { try { rec.start(); } catch(e) {} } };
     micBig.onclick = () => { if (isRecording) stopRecording(!!finalText.trim()); else startRecording(); };
   }
-
-  // ── Init ─────────────────────────────────────────────────────
   cloudLoad();
 </script>
-
-
-</body></html>
+</body>
+</html>
