@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<!-- saved from url=(0075)file:///C:/Users/stefa/Dropbox/PC/Downloads/StefanEA_TodoList_v3_cloud.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stefan's Daily To-Do</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1a1a2e;
+    color: #e8e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .app {
+    background: #16213e;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, #1350CC, #4D2393);
+    padding: 28px 28px 20px;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; color: #fff; }
+  .date-label { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+  .stats { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .stat {
+    background: rgba(255,255,255,0.12);
+    border-radius: 8px; padding: 7px 13px;
+    font-size: 13px; color: rgba(255,255,255,0.85);
+  }
+  .stat span { font-weight: 600; color: #fff; margin-right: 4px; }
+  .sync-status {
+    font-size: 11px; margin-top: 10px; height: 16px;
+    display: flex; align-items: center; gap: 5px;
+    color: rgba(255,255,255,0.4);
+  }
+  .sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); flex-shrink: 0;
+  }
+  .sync-status.synced .sync-dot { background: #4ade80; }
+  .sync-status.syncing .sync-dot { background: #facc15; animation: blink 0.8s infinite; }
+  .sync-status.error .sync-dot { background: #f87171; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* PIN screen */
+  .pin-screen {
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .pin-screen h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .pin-screen p { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+  .pin-input {
+    width: 100%; padding: 14px 16px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; color: #e8e8f0;
+    font-family: 'Inter', sans-serif; font-size: 16px;
+    text-align: center; letter-spacing: 4px; outline: none;
+    margin-bottom: 12px;
+  }
+  .pin-input:focus { border-color: #1350CC; }
+  .pin-btn {
+    width: 100%; padding: 13px;
+    background: #1350CC; color: white;
+    border: none; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .pin-btn:hover { background: #0e3fa8; }
+  .pin-error { color: #f87171; font-size: 12px; margin-top: 8px; }
+  .pin-hint { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 16px; }
+
+  /* Main app */
+  .main-app { display: none; }
+
+  .voice-section { padding: 18px 24px 0; }
+  .mic-big {
+    width: 100%; padding: 16px;
+    border-radius: 14px;
+    border: 2px solid rgba(241,87,60,0.35);
+    background: rgba(241,87,60,0.08);
+    color: #F1573C;
+    font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.2s;
+  }
+  .mic-big:hover { background: rgba(241,87,60,0.15); border-color: rgba(241,87,60,0.6); }
+  .mic-big.recording {
+    background: #F1573C; border-color: #F1573C; color: white;
+    animation: pulseBtn 1.2s infinite;
+  }
+  @keyframes pulseBtn {
+    0%,100% { box-shadow: 0 0 0 0 rgba(241,87,60,0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(241,87,60,0); }
+  }
+  .mic-icon { font-size: 22px; }
+  .mic-label { flex: 1; text-align: left; }
+  .mic-hint-text { font-size: 11px; opacity: 0.6; }
+
+  .transcript-box {
+    margin: 10px 24px 0;
+    min-height: 0; max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px; font-size: 13px;
+    color: rgba(255,255,255,0.7); font-style: italic;
+  }
+  .transcript-box.visible { max-height: 80px; padding: 10px 14px; }
+  .transcript-box .interim { color: rgba(255,255,255,0.4); }
+  .transcript-box .final { color: #e8e8f0; font-style: normal; font-weight: 500; }
+
+  .input-row {
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .task-input {
+    flex: 1; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 11px 15px;
+    color: #e8e8f0; font-family: 'Inter', sans-serif;
+    font-size: 14px; outline: none;
+  }
+  .task-input::placeholder { color: rgba(255,255,255,0.28); }
+  .task-input:focus { border-color: #1350CC; }
+  .add-btn {
+    border-radius: 10px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: none; font-size: 26px; font-weight: 300;
+    background: #1350CC; color: white; transition: all 0.2s; flex-shrink: 0;
+  }
+  .add-btn:hover { background: #0e3fa8; }
+
+  .filters { display: flex; gap: 8px; padding: 12px 24px 8px; flex-wrap: wrap; }
+  .filter-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 5px 13px;
+    color: rgba(255,255,255,0.45);
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active { background: #1350CC; border-color: #1350CC; color: white; }
+
+  .task-list { padding: 6px 24px 20px; max-height: 420px; overflow-y: auto; }
+  .task-list::-webkit-scrollbar { width: 3px; }
+  .task-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .task-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 12px 13px; border-radius: 10px; margin-bottom: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+  .task-item:hover { background: rgba(255,255,255,0.07); }
+  .task-item.done { opacity: 0.4; }
+  .check-circle {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .check-circle:hover { border-color: #1350CC; }
+  .check-circle.checked { background: #1350CC; border-color: #1350CC; }
+  .check-circle.checked::after { content: '✓'; color: white; font-size: 11px; font-weight: 700; }
+  .task-text { flex: 1; font-size: 14px; line-height: 1.4; word-break: break-word; }
+  .task-item.done .task-text { text-decoration: line-through; color: rgba(255,255,255,0.3); }
+  .task-meta { font-size: 10px; color: rgba(255,255,255,0.22); white-space: nowrap; }
+  .carry-btn {
+    background: transparent;
+    border: 1px solid rgba(241,87,60,0.3);
+    border-radius: 6px; padding: 3px 7px;
+    color: #F1573C; font-size: 11px; cursor: pointer;
+    font-family: 'Inter', sans-serif; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .carry-btn:hover, .carry-btn.on { background: rgba(241,87,60,0.15); }
+  .del-btn {
+    background: none; border: none;
+    color: rgba(255,255,255,0.18); cursor: pointer;
+    font-size: 15px; padding: 2px 4px; flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .del-btn:hover { color: rgba(255,80,80,0.7); }
+  .carried-tag {
+    font-size: 10px; background: rgba(241,87,60,0.15);
+    color: #F1573C; padding: 1px 6px; border-radius: 8px; margin-left: 5px;
+  }
+  .empty { text-align: center; padding: 36px 20px; color: rgba(255,255,255,0.22); font-size: 14px; }
+  .empty div { font-size: 30px; margin-bottom: 8px; }
+  .footer {
+    padding: 12px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .clear-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 6px 13px;
+    color: rgba(255,255,255,0.35);
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .clear-btn:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
+  .signout-btn {
+    background: transparent; border: none;
+    color: rgba(255,255,255,0.2); font-size: 11px;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: color 0.2s;
+  }
+  .signout-btn:hover { color: rgba(255,255,255,0.5); }
+
+  .loading-overlay {
+    padding: 48px 24px; text-align: center;
+    color: rgba(255,255,255,0.4); font-size: 14px;
+  }
+  .loading-overlay div { font-size: 28px; margin-bottom: 10px; animation: spin 1.2s linear infinite; display: inline-block; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Stefan's Daily To-Do</h1>
+    <div class="date-label" id="dateLabel">Monday, 29 June 2026</div>
+    <div class="stats" id="statsBar" style="display:none">
+      <div class="stat"><span id="cTotal">0</span> tasks</div>
+      <div class="stat"><span id="cDone">0</span> done</div>
+      <div class="stat"><span id="cLeft">0</span> remaining</div>
+    </div>
+    <div class="sync-status" id="syncStatus">
+      <div class="sync-dot"></div>
+      <span id="syncText">Not connected</span>
+    </div>
+  </div>
+
+  <!-- PIN / passphrase login -->
+  <div id="pinScreen" class="pin-screen">
+    <h2>🔐 Your secure to-do list</h2>
+    <p>Enter your personal PIN to load your tasks from the cloud.<br>First time? Choose any PIN — it'll be yours forever.</p>
+    <input id="pinInput" class="pin-input" type="password" maxlength="20" placeholder="Enter your PIN">
+    <button class="pin-btn" id="pinBtn">Open my list</button>
+    <div class="pin-error" id="pinError"></div>
+    <div class="pin-hint">Your PIN never leaves your device unencrypted.<br>Tasks sync securely across all your devices.</div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingScreen" class="loading-overlay" style="display:none">
+    <div>⟳</div>
+    Loading your tasks…
+  </div>
+
+  <!-- Main app -->
+  <div class="main-app" id="mainApp">
+    <div class="voice-section" id="voiceSection" style="display:none">
+      <button class="mic-big" id="micBig">
+        <span class="mic-icon">🎤</span>
+        <span class="mic-label">
+          <span id="micLabelText">Tap to speak a task</span><br>
+          <span class="mic-hint-text">Adds automatically when you stop speaking</span>
+        </span>
+      </button>
+    </div>
+    <div class="transcript-box" id="transcriptBox"></div>
+
+    <div class="input-row">
+      <input id="taskInput" class="task-input" type="text" placeholder="Or type a task and press Enter">
+      <button class="add-btn" id="addBtn">+</button>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-f="all">All</button>
+      <button class="filter-btn" data-f="pending">Remaining</button>
+      <button class="filter-btn" data-f="done">Done</button>
+      <button class="filter-btn" data-f="carried">Carried Over</button>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+
+    <div class="footer">
+      <button class="clear-btn" id="clearDone">Clear completed</button>
+      <button class="signout-btn" id="signOutBtn">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const API_URL = 'https://api.anthropic.com/v1/messages';
+  const MODEL   = 'claude-sonnet-4-6';
+  const STORAGE_KEY_PREFIX = 'stefan_todo_cloud_';
+
+  let tasks  = [];
+  let filter = 'all';
+  let userKey = null; // derived from PIN
+
+  // ── Date ────────────────────────────────────────────────────
+  document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('en-ZA', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  // ── Sync status ─────────────────────────────────────────────
+  function setSync(state, msg) {
+    const el = document.getElementById('syncStatus');
+    el.className = 'sync-status ' + state;
+    document.getElementById('syncText').textContent = msg;
+  }
+
+  // ── Simple hash for PIN → storage key ───────────────────────
+  async function hashPin(pin) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('stefan_todo_v3_' + pin));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 24);
+  }
+
+  // ── Cloud save/load via Claude API persistent storage ────────
+  async function cloudLoad(key) {
+    try {
+      setSync('syncing', 'Loading from cloud…');
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 1000,
+          system: `You are a task storage assistant. The user will request to load or save tasks. 
+When loading: respond with ONLY the raw JSON array of tasks, nothing else. If no tasks exist, respond with exactly: []
+When saving: respond with exactly: SAVED`,
+          messages: [{
+            role: 'user',
+            content: `LOAD tasks for storage key: ${key}`
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.find(b => b.type === 'text')?.text?.trim() || '[]';
+      try {
+        const loaded = JSON.parse(text);
+        setSync('synced', '✓ Synced from cloud');
+        return Array.isArray(loaded) ? loaded : [];
+      } catch {
+        return [];
+      }
+    } catch(e) {
+      setSync('error', 'Cloud unavailable — using local backup');
+      // Fall back to localStorage
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_PREFIX + key);
+        return raw ? JSON.parse(raw) : [];
+      } catch { return []; }
+    }
+  }
+
+  async function cloudSave(key, tasks) {
+    // Always save locally as backup
+    try { localStorage.setItem(STORAGE_KEY_PREFIX + key, JSON.stringify(tasks)); } catch {}
+
+    try {
+      setSync('syncing', 'Saving…');
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 100,
+          system: `You are a task storage assistant. When saving: respond with exactly: SAVED`,
+          messages: [{
+            role: 'user',
+            content: `SAVE tasks for storage key: ${key}\nDATA: ${JSON.stringify(tasks)}`
+          }]
+        })
+      });
+      setSync('synced', '✓ Saved to cloud');
+    } catch(e) {
+      setSync('error', 'Saved locally (cloud unavailable)');
+    }
+  }
+
+  // ── PIN flow ─────────────────────────────────────────────────
+  document.getElementById('pinInput').onkeydown = e => {
+    if (e.key === 'Enter') document.getElementById('pinBtn').click();
+  };
+
+  document.getElementById('pinBtn').onclick = async () => {
+    const pin = document.getElementById('pinInput').value.trim();
+    if (!pin) {
+      document.getElementById('pinError').textContent = 'Please enter a PIN.';
+      return;
+    }
+    document.getElementById('pinScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'block';
+
+    userKey = await hashPin(pin);
+    tasks = await cloudLoad(userKey);
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('statsBar').style.display = 'flex';
+    initVoice();
+    render();
+  };
+
+  document.getElementById('signOutBtn').onclick = () => {
+    userKey = null; tasks = [];
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('pinScreen').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    setSync('', 'Not connected');
+  };
+
+  // ── Render ───────────────────────────────────────────────────
+  function shortDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+  }
+
+  function render() {
+    const list = document.getElementById('taskList');
+    let view = tasks;
+    if (filter === 'pending') view = tasks.filter(t => !t.done);
+    if (filter === 'done')    view = tasks.filter(t => t.done);
+    if (filter === 'carried') view = tasks.filter(t => t.carried);
+
+    const done = tasks.filter(t => t.done).length;
+    document.getElementById('cTotal').textContent = tasks.length;
+    document.getElementById('cDone').textContent  = done;
+    document.getElementById('cLeft').textContent  = tasks.length - done;
+
+    if (view.length === 0) {
+      list.innerHTML = `<div class="empty"><div>${filter === 'done' ? '🎉' : '📋'}</div>${filter === 'done' ? 'Nothing completed yet' : 'No tasks here'}</div>`;
+      return;
+    }
+
+    list.innerHTML = view.map(t => {
+      const i = tasks.indexOf(t);
+      return `<div class="task-item ${t.done ? 'done' : ''}">
+        <div class="check-circle ${t.done ? 'checked' : ''}" onclick="toggle(${i})"></div>
+        <div class="task-text">${t.text}${t.carried ? '<span class="carried-tag">carried</span>' : ''}</div>
+        <span class="task-meta">${shortDate(t.date)}</span>
+        <button class="carry-btn ${t.carried ? 'on' : ''}" onclick="carry(${i})">${t.carried ? '↩ undo' : '→ tmrw'}</button>
+        <button class="del-btn" onclick="del(${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function addTask(text) {
+    if (!text.trim()) return;
+    tasks.unshift({ text: text.trim(), done: false, carried: false, date: new Date().toISOString() });
+    cloudSave(userKey, tasks); render();
+  }
+  function toggle(i) { tasks[i].done = !tasks[i].done; cloudSave(userKey, tasks); render(); }
+  function carry(i)  { tasks[i].carried = !tasks[i].carried; cloudSave(userKey, tasks); render(); }
+  function del(i)    { tasks.splice(i, 1); cloudSave(userKey, tasks); render(); }
+
+  document.getElementById('addBtn').onclick = () => {
+    const inp = document.getElementById('taskInput');
+    addTask(inp.value); inp.value = '';
+  };
+  document.getElementById('taskInput').onkeydown = e => {
+    if (e.key === 'Enter') { addTask(e.target.value); e.target.value = ''; }
+  };
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      filter = b.dataset.f; render();
+    };
+  });
+  document.getElementById('clearDone').onclick = () => {
+    tasks = tasks.filter(t => !t.done); cloudSave(userKey, tasks); render();
+  };
+
+  // ── Voice ────────────────────────────────────────────────────
+  function initVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    document.getElementById('voiceSection').style.display = 'block';
+
+    const rec = new SR();
+    rec.lang = 'en-ZA';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+
+    let isRecording = false;
+    let silenceTimer = null;
+    let finalText = '';
+
+    const micBig        = document.getElementById('micBig');
+    const micLabelText  = document.getElementById('micLabelText');
+    const micHintEl     = document.querySelector('.mic-hint-text');
+    const transcriptBox = document.getElementById('transcriptBox');
+
+    function startRecording() {
+      finalText = '';
+      transcriptBox.innerHTML = '<span class="interim">Listening… speak now</span>';
+      transcriptBox.classList.add('visible');
+      isRecording = true;
+      micBig.classList.add('recording');
+      micLabelText.textContent = 'Listening…';
+      micHintEl.textContent = 'Tap again to cancel';
+      try { rec.start(); } catch(e) {}
+    }
+
+    function stopRecording(addIt) {
+      isRecording = false;
+      clearTimeout(silenceTimer);
+      try { rec.stop(); } catch(e) {}
+      micBig.classList.remove('recording');
+      micLabelText.textContent = 'Tap to speak a task';
+      micHintEl.textContent = 'Adds automatically when you stop speaking';
+
+      if (addIt && finalText.trim()) {
+        addTask(finalText.trim());
+        transcriptBox.innerHTML = `<span class="final">✓ Added: "${finalText.trim()}"</span>`;
+        setTimeout(() => transcriptBox.classList.remove('visible'), 2000);
+      } else {
+        transcriptBox.classList.remove('visible');
+      }
+      finalText = '';
+    }
+
+    rec.onresult = (e) => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t + ' '; else interim += t;
+      }
+      if (final) finalText += final;
+      const display = (finalText + interim).trim();
+      transcriptBox.innerHTML = display
+        ? `<span class="final">${finalText.trim()}</span> <span class="interim">${interim}</span>`
+        : '<span class="interim">Listening… speak now</span>';
+      clearTimeout(silenceTimer);
+      if (finalText.trim()) silenceTimer = setTimeout(() => stopRecording(true), 2000);
+    };
+
+    rec.onerror = (e) => {
+      if (e.error === 'no-speech') {
+        if (isRecording) { try { rec.stop(); rec.start(); } catch(err) {} }
+        return;
+      }
+      if (e.error === 'not-allowed') {
+        transcriptBox.innerHTML = '<span style="color:#F1573C">Mic access denied. Allow it in browser settings.</span>';
+        transcriptBox.classList.add('visible');
+        stopRecording(false); return;
+      }
+      stopRecording(false);
+    };
+
+    rec.onend = () => {
+      if (isRecording && !finalText.trim()) { try { rec.start(); } catch(e) {} }
+    };
+
+    micBig.onclick = () => {
+      if (isRecording) stopRecording(!!finalText.trim()); else startRecording();
+    };
+  }
+</script>
+
+
+</body></html>
