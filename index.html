@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0057)file:///C:/Users/stefa/Dropbox/PC/Downloads/index_32.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stefan's Daily To-Do</title>
 <style>
@@ -197,19 +197,19 @@
 <div class="app">
   <div class="header">
     <h1>Stefan's Daily To-Do</h1>
-    <div class="date-label" id="dateLabel"></div>
+    <div class="date-label" id="dateLabel">Monday, 29 June 2026</div>
     <div class="stats">
       <div class="stat"><span id="cTotal">0</span> tasks</div>
       <div class="stat"><span id="cDone">0</span> done</div>
       <div class="stat"><span id="cLeft">0</span> remaining</div>
     </div>
-    <div class="sync-status syncing" id="syncStatus">
+    <div class="sync-status synced" id="syncStatus">
       <div class="sync-dot"></div>
-      <span id="syncText">Connecting to cloud…</span>
+      <span id="syncText">✓ Synced with Google Sheets</span>
     </div>
   </div>
 
-  <div class="voice-section" id="voiceSection" style="display:none">
+  <div class="voice-section" id="voiceSection" style="display: block;">
     <button class="mic-big" id="micBig">
       <span class="mic-icon">🎤</span>
       <span class="mic-label">
@@ -224,7 +224,7 @@
   </div>
 
   <div class="input-row">
-    <input id="taskInput" class="task-input" type="text" placeholder="Or type a task and press Enter" />
+    <input id="taskInput" class="task-input" type="text" placeholder="Or type a task and press Enter">
     <button class="add-btn" id="addBtn">+</button>
   </div>
 
@@ -235,7 +235,7 @@
     <button class="filter-btn" data-f="carried">Carried Over</button>
   </div>
 
-  <div class="task-list" id="taskList"></div>
+  <div class="task-list" id="taskList"><div class="empty"><div>📋</div>No tasks here</div></div>
 
   <div class="footer">
     <button class="clear-btn" id="clearDone">Clear completed</button>
@@ -430,5 +430,6 @@
   // ── Init ─────────────────────────────────────────────────────
   cloudLoad();
 </script>
-</body>
-</html>
+
+
+</body></html>
